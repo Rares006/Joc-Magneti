@@ -59,7 +59,7 @@
 
         h2, h3, h4 {
             color: var(--black-accent);
-            font-weight: 600;
+            font-weight: 300;
             letter-spacing: -0.02em;
             margin-bottom: 1rem;
             text-align: center;
@@ -209,11 +209,11 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            aspect-ratio: 1;
+            aspect-ratio: 1,5;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: 300;
         }
 
         .key:active {
@@ -227,9 +227,10 @@
         }
 
         .key.enter {
-            background: #4CAF50;
-            grid-column: span 2;
-            aspect-ratio: 2;
+            background: var(--black-accent);
+            grid-column: span 1;
+            grid-row: span 3;
+            
         }
 
         .quick-scores {
@@ -274,14 +275,14 @@
             background: linear-gradient(135deg, var(--oak-medium), var(--oak-dark));
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 12px;
+            border-radius: 6px;
         }
 
         .combination {
             background: var(--oak-light);
             margin: 0.5rem 0;
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 4px;
             border: 1px solid var(--oak-dark);
             font-size: 0.9rem;
         }
@@ -289,7 +290,7 @@
         #matchInfo {
             background: var(--oak-medium);
             padding: 1rem;
-            border-radius: 12px;
+            border-radius: 4px;
             margin: 1rem 0;
             text-align: center;
         }
@@ -326,6 +327,56 @@
         }
 
         /* Rest of the previous styles remain the same */
+
+        .match-info {
+    background: var(--oak-medium);
+    padding: 1rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.suggestions-container {
+    background: linear-gradient(135deg, var(--oak-medium), var(--oak-dark));
+    padding: 1rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+}
+
+.suggestions-title {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.suggestions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.suggestion {
+    background: var(--oak-light);
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.score-display {
+    background: var(--oak-light);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    border: 2px solid var(--oak-dark);
+}
+
+.key.special {
+    background: var(--oak-dark);
+}
     </style>
 </head>
 <body>
@@ -357,18 +408,29 @@
         </div>
 
         <div id="gameArea" style="display: none;">
-            <h2>Scor țintă: <span id="targetScore"></span></h2>
-            <div id="roundInfo"></div>
-            <div id="matchInfo"></div>
+            <div class="game-info">
+                <div><span id="targetScore"></span></div>
+                <div id="roundInfo"></div>
+            </div>
+        
+            <div id="matchInfo" class="match-info"></div>
+            
             <div id="currentPlayer" class="current-turn"></div>
-            <div id="suggestions" class="suggestions"></div>
-            <div id="scoreDisplay"></div>
+            
+            <div class="suggestions-container">
+                <div class="suggestions-title">Sugestii de scor</div>
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+        
+            <div id="scoreDisplay" class="score-display">0</div>
+            
             <div class="quick-scores">
                 <button class="quick-score" onclick="addQuickScore(60)">60</button>
                 <button class="quick-score" onclick="addQuickScore(40)">40</button>
                 <button class="quick-score" onclick="addQuickScore(38)">38</button>
                 <button class="quick-score" onclick="addQuickScore(25)">25</button>
             </div>
+            
             <div class="keypad">
                 <button class="key" onclick="addNumber(1)">1</button>
                 <button class="key" onclick="addNumber(2)">2</button>
@@ -381,7 +443,7 @@
                 <button class="key" onclick="addNumber(9)">9</button>
                 <button class="key special" onclick="clearScore()">C</button>
                 <button class="key" onclick="addNumber(0)">0</button>
-                <button class="key enter" onclick="submitCustomScore()">Enter</button>
+                <button class="key special" onclick="submitCustomScore()">↵</button>
             </div>
         </div>
     </div>
@@ -473,45 +535,33 @@
         }
 
         function calculateSuggestions(currentScore) {
-            const remaining = targetScore - currentScore;
-            const suggestionsDiv = document.getElementById('suggestions');
-            const remainingThrows = 3 - attempts;
+    const remaining = targetScore - currentScore;
+    const suggestionsDiv = document.getElementById('suggestions');
+    const remainingThrows = 3 - attempts;
 
-            if (remaining <= 0) {
-                suggestionsDiv.innerHTML = '<p>Scor atins sau depășit!</p>';
-                return;
-            }
+    if (remaining <= 0) {
+        suggestionsDiv.innerHTML = '<div class="suggestion">Scor depășit!</div>';
+        return;
+    }
 
-            let combinations = findBestCombinations(remaining, remainingThrows);
-            
-            let html = `
-                <h4>Sugestii pentru ${remaining} puncte rămase</h4>
-                <p>Aruncări rămase în această tură: ${remainingThrows}</p>
+    let combinations = findBestCombinations(remaining, remainingThrows);
+    
+    if (combinations.length > 0) {
+        const html = combinations.slice(0, 2).map(combo => `
+            <div class="suggestion">
+                ${combo.join(' → ')}
+            </div>
+        `).join('');
+        suggestionsDiv.innerHTML = html;
+    } else {
+        const bestScore = validScores.find(score => score <= remaining);
+        if (bestScore) {
+            suggestionsDiv.innerHTML = `
+                <div class="suggestion">${bestScore}</div>
             `;
-            
-            if (combinations.length > 0) {
-                combinations.slice(0, 3).forEach((combo, index) => {
-                    html += `
-                        <div class="combination">
-                            <strong>Opțiunea ${index + 1}:</strong> 
-                            ${combo.join(' → ')} 
-                            (Total: ${combo.reduce((a, b) => a + b, 0)})
-                        </div>
-                    `;
-                });
-            } else {
-                const bestScore = validScores.find(score => score <= remaining);
-                if (bestScore) {
-                    html += `
-                        <div class="combination">
-                            <strong>Sugestie:</strong> ${bestScore}
-                        </div>
-                    `;
-                }
-            }
-
-            suggestionsDiv.innerHTML = html;
         }
+    }
+}
 
         function findBestCombinations(target, maxThrows) {
             let combinations = [];
@@ -567,6 +617,7 @@
             scores[match[0]] = 0;
             scores[match[1]] = 0;
             updateDisplay();
+            
         }
 
         function submitScore() {
@@ -682,22 +733,21 @@
         }
 
         function updateDisplay() {
-            if (currentMatchIndex < matches.length) {
-                const [player1, player2] = matches[currentMatchIndex];
-                const currentPlayer = matches[currentMatchIndex][currentPlayerIndex];
+    if (currentMatchIndex < matches.length) {
+        const [player1, player2] = matches[currentMatchIndex];
+        const currentPlayer = matches[currentMatchIndex][currentPlayerIndex];
 
-                document.getElementById('roundInfo').innerHTML = `<h3>Runda ${currentRound}</h3>`;
-                document.getElementById('matchInfo').innerHTML = `
-                    <h4>Meci curent: ${player1} vs ${player2}</h4>
-                    <p>${player1}: ${scores[player1]} puncte | ${player2}: ${scores[player2]} puncte</p>
-                `;
-                document.getElementById('currentPlayer').innerHTML = `
-                    <h4>La rând: ${currentPlayer}</h4>
-                `;
+        document.getElementById('roundInfo').textContent = `Runda ${currentRound}`;
+        document.getElementById('matchInfo').innerHTML = `
+            ${player1}: ${scores[player1]} puncte | ${player2}: ${scores[player2]} puncte
+        `;
+        document.getElementById('currentPlayer').textContent = `La rând: ${currentPlayer}`;
+        document.getElementById('targetScore').textContent = targetScore;
 
-                calculateSuggestions(scores[currentPlayer]);
-            }
-        }
+        calculateSuggestions(scores[currentPlayer]);
+    }
+}
+
 
         // Rest of the previous JavaScript remains the same
         function calculateSuggestions(currentScore) {
@@ -749,25 +799,36 @@
             `;
         }
 
-        function updateDisplay() {
-            if (currentMatchIndex < matches.length) {
-                const [player1, player2] = matches[currentMatchIndex];
-                const currentPlayer = matches[currentMatchIndex][currentPlayerIndex];
+        document.addEventListener('keydown', function(event) {
+    // Prevent default behavior for Enter and Backspace
+    if (event.key === 'Enter' || event.key === 'Backspace') {
+        event.preventDefault();
+    }
+    
+    // Handle number keys
+    if (/^[0-9]$/.test(event.key)) {
+        addNumber(parseInt(event.key));
+    }
+    
+    // Handle Enter key
+    if (event.key === 'Enter') {
+        submitCustomScore();
+    }
+    
+    // Handle Backspace or Delete
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+        clearScore();
+    }
+    
+    // Handle quick score shortcuts
+    switch (event.key) {
+        case 'q': case 'Q': addQuickScore(60); break;
+        case 'w': case 'W': addQuickScore(40); break;
+        case 'e': case 'E': addQuickScore(38); break;
+        case 'r': case 'R': addQuickScore(25); break;
+    }
+});
 
-                document.getElementById('roundInfo').innerHTML = `<h3>Runda ${currentRound}</h3>`;
-                document.getElementById('matchInfo').innerHTML = `
-                    <h4>Meci curent: ${player1} vs ${player2}</h4>
-                    <p>${player1}: ${scores[player1]} puncte | ${player2}: ${scores[player2]} puncte</p>
-                `;
-                document.getElementById('currentPlayer').innerHTML = `
-                    <h4>La rând: ${currentPlayer}</h4>
-                    <input type="number" id="scoreInput" placeholder="Introduceți scorul">
-                    <button onclick="submitScore()">Trimite scor</button>
-                `;
-
-                calculateSuggestions(scores[currentPlayer]);
-            }
-        }
     </script>
 </body>
 </html>
